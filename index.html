@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebOS Desktop 2026</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background: #1e1e1e; }
+        
+        /* Màn hình Desktop */
+        #desktop {
+            width: 100vw; height: calc(100vh - 50px);
+            background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+            background-size: cover; position: relative; padding: 20px;
+            display: grid; grid-template-columns: repeat(auto-fill, 90px); grid-auto-rows: 90px; gap: 15px;
+        }
+
+        /* Icon ngoài Desktop */
+        .desktop-icon {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            cursor: pointer; border-radius: 8px; transition: background 0.2s; padding: 5px; text-align: center;
+        }
+        .desktop-icon:hover { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(5px); }
+        .desktop-icon .icon-img { font-size: 38px; margin-bottom: 5px; }
+        .desktop-icon span { color: #fff; font-size: 12px; text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
+
+        /* Thanh Taskbar phía dưới */
+        #taskbar {
+            width: 100vw; height: 50px; background: rgba(20, 20, 20, 0.85);
+            backdrop-filter: blur(10px); display: flex; align-items: center; padding: 0 10px;
+            position: absolute; bottom: 0; left: 0; border-top: 1px solid rgba(255,255,255,0.1); z-index: 1000;
+        }
+        .start-btn {
+            background: linear-gradient(45deg, #007acc, #005999); color: white; border: none;
+            padding: 8px 16px; border-radius: 4px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 6px;
+        }
+        .taskbar-apps { display: flex; gap: 5px; margin-left: 10px; flex-grow: 1; }
+        .task-item {
+            background: rgba(255,255,255,0.1); color: white; padding: 6px 12px; border-radius: 4px;
+            font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .task-item.active { background: rgba(255,255,255,0.25); border-bottom: 2px solid #007acc; }
+
+        /* Cửa sổ ứng dụng (Window) */
+        .window {
+            position: absolute; top: 10%; left: 15vw; width: 70vw; height: 70vh;
+            background: #252526; color: white; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: flex; flex-direction: column; overflow: hidden; border: 1px solid #444; resize: both;
+            min-width: 300px; min-height: 200px; z-index: 100;
+        }
+        .window-header {
+            background: #2d2d2d; padding: 10px; display: flex; justify-content: space-between; align-items: center; cursor: move;
+            border-bottom: 1px solid #3c3c3c;
+        }
+        .window-title { font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+        .window-controls { display: flex; gap: 8px; }
+        .window-controls button {
+            width: 14px; height: 14px; border-radius: 50%; border: none; cursor: pointer;
+        }
+        .btn-close { background: #ff5f56; }
+        .btn-minimize { background: #ffbd2e; }
+        .btn-maximize { background: #27c93f; }
+        .window-body { flex-grow: 1; background: #1e1e1e; overflow: auto; display: flex; flex-direction: column; }
+        .window-body iframe { width: 100%; height: 100%; border: none; background: white; }
+
+        /* Start Menu giả lập */
+        #start-menu {
+            position: absolute; bottom: 55px; left: 10px; width: 280px; height: 350px;
+            background: rgba(30, 30, 30, 0.95); backdrop-filter: blur(15px); border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1); padding: 15px; display: none; flex-direction: column; z-index: 2000;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+        }
+        #start-menu.show { display: flex; }
+        .start-menu-title { font-size: 13px; color: #aaa; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+        .start-app-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .start-app-item {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 10px; border-radius: 6px; cursor: pointer; color: white; font-size: 11px; text-align: center;
+        }
+        .start-app-item:hover { background: rgba(255,255,255,0.1); }
+        .start-app-item span { font-size: 24px; margin-bottom: 4px; }
+    </style>
+</head>
+<body>
+
+    <!-- Màn hình chính -->
+    <div id="desktop">
+        <div class="desktop-icon" onclick="openApp('browser', 'Trình duyệt Web', '🌐')">
+            <div class="icon-img">🌐</div>
+            <span>Trình duyệt</span>
+        </div>
+        <div class="desktop-icon" onclick="openApp('store', 'Kho Tải App', '📥')">
+            <div class="icon-img">📥</div>
+            <span>Tải App & Game</span>
+        </div>
+        <div class="desktop-icon" onclick="openApp('notepad', 'Ghi Chú', '📝')">
+            <div class="icon-img">📝</div>
+            <span>Notepad</span>
+        </div>
+    </div>
+
+    <!-- Start Menu -->
+    <div id="start-menu">
+        <div class="start-menu-title">Ứng dụng đã cài</div>
+        <div class="start-app-list">
+            <div class="start-app-item" onclick="openApp('browser', 'Trình duyệt Web', '🌐'); toggleStartMenu();"><span>🌐</span>Trình duyệt</div>
+            <div class="start-app-item" onclick="openApp('store', 'Kho Tải App', '📥'); toggleStartMenu();"><span>📥</span>App Store</div>
+            <div class="start-app-item" onclick="openApp('notepad', 'Ghi Chú', '📝'); toggleStartMenu();"><span>📝</span>Notepad</div>
+        </div>
+    </div>
+
+    <!-- Thanh Taskbar -->
+    <div id="taskbar">
+        <button class="start-btn" onclick="toggleStartMenu()">🏠 Start</button>
+        <div class="taskbar-apps" id="taskbar-apps"></div>
+    </div>
+
+    <!-- Khu vực chứa các cửa sổ ứng dụng mở lên -->
+    <div id="windows-container"></div>
+
+    <script>
+        let openWindows = {};
+
+        function toggleStartMenu() {
+            let menu = document.getElementById('start-menu');
+            menu.classList.toggle('show');
+        }
+
+        function openApp(appId, appName, appIcon) {
+            if (openWindows[appId]) {
+                // Nếu app đã mở thì đưa lên trên cùng
+                document.getElementById('win-' + appId).style.zIndex = ++highestZIndex;
+                return;
+            }
+
+            let container = document.getElementById('windows-container');
+            let win = document.createElement('div');
+            win.className = 'window';
+            win.id = 'win-' + appId;
+            win.style.top = '10vh';
+            win.style.left = '15vw';
+
+            let contentHtml = '';
+            if (appId === 'browser') {
+                contentHtml = `<div style="padding: 8px; background: #333; display: flex; gap: 5px;">
+                                   <input type="text" id="url-${appId}" value="https://example.com" style="flex-grow: 1; padding: 4px; background: #222; border: 1px solid #555; color: white; border-radius: 4px;">
+                                   <button onclick="loadUrl('${appId}')" style="padding: 4px 10px; background: #007acc; border: none; color: white; border-radius: 4px; cursor: pointer;">Đi</button>
+                               </div>
+                               <iframe id="iframe-${appId}" src="https://example.com" sandbox="allow-scripts allow-same-origin"></iframe>`;
+            } else if (appId === 'store') {
+                contentHtml = `<div style="padding: 20px; color: white;">
+                                   <h2>Kho Ứng Dụng WebOS</h2>
+                                   <p style="margin-top: 10px; color: #aaa;">Chọn ứng dụng bạn muốn tải về máy:</p>
+                                   <div style="margin-top: 15px; display: flex; gap: 15px;">
+                                       <div style="background: #333; padding: 15px; border-radius: 8px; width: 120px; text-align: center;">
+                                           <div style="font-size: 30px;">🎮</div>
+                                           <div style="margin: 8px 0; font-size: 13px;">Game Cờ Caro</div>
+                                           <button onclick="alert('Đã tải thành công ứng dụng!')" style="background: #27c93f; border: none; color: white; padding: 4px 8px; border-radius: 4px; cursor: pointer;">Tải về</button>
+                                       </div>
+                                   </div>
+                               </div>`;
+            } else {
+                contentHtml = `<textarea style="width: 100%; height: 100%; background: #1e1e1e; color: white; border: none; padding: 10px; resize: none; outline: none;" placeholder="Nhập ghi chú của bạn vào đây..."></textarea>`;
+            }
+
+            win.innerHTML = `
+                <div class="window-header" onmousedown="bringToFront('${appId}')">
+                    <div class="window-title">${appIcon} ${appName}</div>
+                    <div class="window-controls">
+                        <button class="btn-minimize" onclick="minimizeApp('${appId}')"></button>
+                        <button class="btn-maximize" onclick="maximizeApp('${appId}')"></button>
+                        <button class="btn-close" onclick="closeApp('${appId}')"></button>
+                    </div>
+                </div>
+                <div class="window-body">${contentHtml}</div>
+            `;
+
+            container.appendChild(win);
+            openWindows[appId] = true;
+
+            // Thêm vào taskbar
+            let taskbarApps = document.getElementById('taskbar-apps');
+            let taskItem = document.createElement('div');
+            taskItem.className = 'task-item active';
+            taskItem.id = 'task-' + appId;
+            taskItem.innerHTML = `${appIcon} ${appName}`;
+            taskItem.onclick = () => bringToFront(appId);
+            taskbarApps.appendChild(taskItem);
+        }
+
+        let highestZIndex = 100;
+        function bringToFront(appId) {
+            let win = document.getElementById('win-' + appId);
+            if (win) {
+                highestZIndex++;
+                win.style.zIndex = highestZIndex;
+            }
+        }
+
+        function closeApp(appId) {
+            let win = document.getElementById('win-' + appId);
+            if (win) win.remove();
+            let task = document.getElementById('task-' + appId);
+            if (task) task.remove();
+            delete openWindows[appId];
+        }
+
+        function loadUrl(appId) {
+            let input = document.getElementById('url-' + appId);
+            let iframe = document.getElementById('iframe-' + appId);
+            let url = input.value;
+            if(!url.startsWith('http')) url = 'https://' + url;
+            iframe.src = url;
+        }
+    </script>
+</body>
+</html>
